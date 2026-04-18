@@ -38,16 +38,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t);min-he
 .role-opt{padding:12px;border:1.5px solid var(--b);border-radius:var(--r2);cursor:pointer;transition:all .15s;text-align:center}
 .role-opt:hover{border-color:var(--ac);background:#FFF8F9}
 .role-opt.on{border-color:var(--ac);background:#FFF0F2}
-.role-opt .ri{font-size:22px;display:block;margin-bottom:4px}
-.role-opt .rn{font-size:13px;font-weight:600;color:var(--t)}
-.role-opt .rh{font-size:11px;color:var(--m);margin-top:2px}
+.role-opt .ri{font-size:22px;display:block;margin-bottom:4px;pointer-events:none}
+.role-opt .rn{font-size:13px;font-weight:600;color:var(--t);pointer-events:none}
+.role-opt .rh{font-size:11px;color:var(--m);margin-top:2px;pointer-events:none}
 .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
 .mode-opt{padding:16px;border:1.5px solid var(--b);border-radius:var(--r2);cursor:pointer;transition:all .15s}
 .mode-opt:hover{border-color:var(--ac)}
 .mode-opt.on{border-color:var(--ac);background:#FFF0F2}
-.mode-opt .mi{font-size:26px;display:block;margin-bottom:6px}
-.mode-opt .mn{font-size:14px;font-weight:600;color:var(--t);margin-bottom:3px}
-.mode-opt .mh{font-size:12px;color:var(--m);line-height:1.4}
+.mode-opt .mi{font-size:26px;display:block;margin-bottom:6px;pointer-events:none}
+.mode-opt .mn{font-size:14px;font-weight:600;color:var(--t);margin-bottom:3px;pointer-events:none}
+.mode-opt .mh{font-size:12px;color:var(--m);line-height:1.4;pointer-events:none}
 
 /* ── APP SHELL ── */
 #app{display:none;min-height:100vh}
