@@ -374,7 +374,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t);min-he
         <span class="mode-desc">Accedo per approvare contenuti e comunicare con il team</span>
       </button>
     </div>
-    <button class="pbtn" type="button" onclick="goS('s2')">Continua →</button>
+    <button class="pbtn" type="button" onclick="continueFromMode()">Continua →</button>
   </div>
 </div>
 
@@ -460,6 +460,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t);min-he
 <div class="topbar">
   <h2 id="ptitle">Strategia</h2>
   <select class="csel" id="csel" onchange="onCsel()"><option value="">— Seleziona cliente —</option></select>
+<span id="cliente-nome-badge" style="display:none;font-size:13px;font-weight:500;color:var(--m);padding:6px 12px;background:var(--bg);border-radius:var(--r);border:1px solid var(--b)"></span>
   <div class="syncw"><div class="sdot" id="sd"></div><span id="sl" style="font-size:12px">—</span></div>
   <button class="btn sm" type="button" onclick="doSync()">↻</button>
   <button class="btn acc" id="addbtn" type="button" onclick="mainAdd()" style="display:none">+ Nuovo</button>
@@ -821,12 +822,16 @@ function selMode(m){
   _mode=m;
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('on'));
   document.getElementById('mode-'+m).classList.add('on');
-  // se cliente, preseleziona ruolo cliente
-  if(m==='cliente'){
+}
+
+// il bottone Continua della schermata 1 ora gestisce la logica
+function continueFromMode(){
+  if(_mode==='cliente'){
+    // cliente: ruolo fisso, vai diretto a connessione
     _role='cliente';_multiRoles=['cliente'];
-    document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('on'));
-    const cb=document.querySelector('.role-btn[data-role="cliente"]');
-    if(cb)cb.classList.add('on');
+    goS('s3');
+  } else {
+    goS('s2');
   }
 }
 
@@ -880,16 +885,39 @@ function enterApp(){
   document.getElementById('set-name').value=uName;
   const sr=document.getElementById('set-roles');sr.innerHTML='';
   uRoles.forEach(r=>{const s=document.createElement('span');s.className='badge '+(RUOLI_CLS[r]||'team');s.textContent=RUOLI_LBL[r]||r;sr.appendChild(s)});
-  applyRole();populateCsel();setSyncUI(online?'ok':'err');renderAll();updateBadges();
+  applyRole();
+  if(isCliente()){
+    // cliente: nasconde selettore, mostra nome cliente
+    document.getElementById('csel').style.display='none';
+    // assegna automaticamente il primo cliente trovato se ce n'è uno
+    if(clienti.length>0&&!curC){curC=clienti[0].id;}
+    // mostra nome cliente nella topbar
+    const cl=clienti.find(c=>c.id===curC);
+    const nb=document.getElementById('cliente-nome-badge');
+    if(nb&&cl){nb.textContent='👥 '+cl.nome;nb.style.display='inline-flex';}
+  } else {
+    document.getElementById('csel').style.display='';
+    populateCsel();
+  }
+  setSyncUI(online?'ok':'err');renderAll();updateBadges();
 }
 
 function applyRole(){
-  const it=isTeam(),im=isMaster();
+  const it=isTeam(),im=isMaster(),ic=isCliente();
   document.getElementById('sect-team').style.display=it?'block':'none';
   document.getElementById('nav-team').style.display=it?'flex':'none';
   document.getElementById('nav-clienti').style.display=it?'flex':'none';
   document.getElementById('nav-log').style.display=im?'flex':'none';
   document.getElementById('nav-impostazioni').style.display=it?'flex':'none';
+  // cliente vede solo: strategia, contenuti, calendario, chat, notifiche
+  if(ic){
+    document.getElementById('nav-strategia').style.display='flex';
+    document.getElementById('nav-contenuti').style.display='flex';
+    document.getElementById('nav-calendario').style.display='flex';
+    document.getElementById('nav-appuntamenti').style.display='none';
+    document.getElementById('nav-chat').style.display='flex';
+    document.getElementById('nav-notifiche').style.display='flex';
+  }
 }
 
 // ── SYNC ──
@@ -911,7 +939,7 @@ function renderAll(){
 
 // ── NAVIGAZIONE ──
 const PTITLES={strategia:'🎯 Strategia',contenuti:'📦 Contenuti',calendario:'📅 Calendario Editoriale',appuntamenti:'📆 Appuntamenti & Deadline',chat:'💬 Chat Cliente',notifiche:'🔔 Notifiche',team:'👥 Team',clienti:'🏷️ Clienti',log:'📋 Attività',impostazioni:'⚙️ Impostazioni'};
-const ADD_PG={contenuti:1,calendario:1,appuntamenti:1,team:1,clienti:1};
+const ADD_PG={contenuti:1,calendario:1,appuntamenti:1,team:1,clienti:1,strategia:1};
 
 function pg(p){
   curPage=p;
@@ -921,7 +949,9 @@ function pg(p){
   const ne=document.getElementById('nav-'+p);if(ne)ne.classList.add('on');
   document.getElementById('ptitle').textContent=PTITLES[p]||p;
   const ab=document.getElementById('addbtn');
-  ab.style.display=(ADD_PG[p]&&isTeam())?'inline-flex':'none';
+  const addLabels={contenuti:'+ Nuovo',calendario:'+ Evento',appuntamenti:'+ Appuntamento',team:'+ Membro',clienti:'+ Cliente',strategia:'+ Sezione'};
+  ab.textContent=addLabels[p]||'+ Nuovo';
+  ab.style.display=(ADD_PG[p]&&isTeam()&&(p!=='strategia'||curC))?'inline-flex':'none';
 }
 
 function mainAdd(){
@@ -930,6 +960,7 @@ function mainAdd(){
   else if(curPage==='appuntamenti')openAppAdd();
   else if(curPage==='team')openMembro();
   else if(curPage==='clienti')openCliente();
+  else if(curPage==='strategia')openAddStrat();
 }
 
 function toggleSB(){
@@ -943,7 +974,15 @@ function populateCsel(){
   sel.innerHTML='<option value="">— Seleziona cliente —</option>';
   clienti.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.nome;if(c.id===cur||c.id===curC)o.selected=true;sel.appendChild(o)});
 }
-function onCsel(){curC=document.getElementById('csel').value||null;renderAll()}
+function onCsel(){
+  curC=document.getElementById('csel').value||null;
+  renderAll();
+  // aggiorna visibilità bottone add su strategia
+  if(curPage==='strategia'){
+    const ab=document.getElementById('addbtn');
+    ab.style.display=(isTeam()&&curC)?'inline-flex':'none';
+  }
+}
 
 // ── SETTINGS ──
 async function updSb(){
