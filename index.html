@@ -357,7 +357,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t);min-he
     <div class="sc-logo">🌊</div>
     <h1>Benvenuto su Flowco</h1>
     <p class="sub">Come vuoi usare la piattaforma?</p>
-    <div class="mode-grid">
+    <div class="mode-grid" style="grid-template-columns:1fr 1fr 1fr">
       <button type="button" class="mode-btn on" id="mode-agenzia" onclick="selMode('agenzia')">
         <span class="mode-icon">🏢</span>
         <span class="mode-title">Agenzia</span>
@@ -367,6 +367,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t);min-he
         <span class="mode-icon">🧑‍💻</span>
         <span class="mode-title">Libero professionista</span>
         <span class="mode-desc">Una o poche persone che coprono più ruoli</span>
+      </button>
+      <button type="button" class="mode-btn" id="mode-cliente" onclick="selMode('cliente')">
+        <span class="mode-icon">👥</span>
+        <span class="mode-title">Cliente</span>
+        <span class="mode-desc">Accedo per approvare contenuti e comunicare con il team</span>
       </button>
     </div>
     <button class="pbtn" type="button" onclick="goS('s2')">Continua →</button>
@@ -402,10 +407,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t);min-he
     <h1>Connetti Supabase</h1>
     <p class="sub">Inserisci le credenziali del progetto Flowco.</p>
     <div class="ebox" id="serr"></div>
+    <div style="background:#FFF8E1;border:1px solid #FFD54F;border-radius:var(--r);padding:10px 14px;font-size:13px;color:#7A5800;margin-bottom:14px" id="local-warn" style="display:none">
+      ⚠️ <strong>Stai aprendo il file in locale.</strong> Le chiamate a Supabase non funzioneranno. Carica il file su GitHub Pages oppure usa la <strong>modalità demo</strong> qui sotto.
+    </div>
     <div class="sf"><label>Il tuo nome</label><input type="text" id="sname" placeholder="es. Rebecca"></div>
     <div class="sf"><label>Supabase Project URL</label><input type="text" id="surl" placeholder="https://xxxxxxxxxxxx.supabase.co"><div class="hint">Settings → General → Project URL</div></div>
     <div class="sf"><label>Publishable Key</label><input type="password" id="skey" placeholder="sb_publishable_..."><div class="hint">Settings → API Keys → Publishable key</div></div>
     <button class="pbtn" id="scbtn" type="button" onclick="doConnect()">Connetti e apri Flowco →</button>
+    <button class="sbtn" type="button" onclick="enterDemo()" style="margin-bottom:8px">🎮 Entra in modalità demo (senza Supabase)</button>
     <button class="sbtn" type="button" onclick="goS('s2')">← Indietro</button>
   </div>
 </div>
@@ -812,6 +821,13 @@ function selMode(m){
   _mode=m;
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('on'));
   document.getElementById('mode-'+m).classList.add('on');
+  // se cliente, preseleziona ruolo cliente
+  if(m==='cliente'){
+    _role='cliente';_multiRoles=['cliente'];
+    document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('on'));
+    const cb=document.querySelector('.role-btn[data-role="cliente"]');
+    if(cb)cb.classList.add('on');
+  }
 }
 
 function selRole(r){
@@ -826,6 +842,14 @@ function selRole(r){
     document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('on'));
     document.querySelector('.role-btn[data-role="'+r+'"]').classList.add('on');
   }
+}
+
+function enterDemo(){
+  uName=document.getElementById('sname').value.trim()||'Utente Demo';
+  uMode=_mode;
+  uRoles=document.getElementById('multiRole').checked?_multiRoles:[_role];
+  if(!uRoles.length)uRoles=['master'];
+  online=false;loadLoc();enterApp();toast('Modalità demo attiva — dati salvati solo in locale');
 }
 
 async function doConnect(){
@@ -1558,6 +1582,10 @@ async function delApp(){if(!editAppId||!confirm('Eliminare?'))return;calApp=calA
 
 // ── BOOT ──
 (function(){
+  // show warning if running from local file
+  if(location.protocol==='file:'){
+    const w=document.getElementById('local-warn');if(w)w.style.display='block';
+  }
   sbUrl=localStorage.getItem('fl_u')||'';sbKey=localStorage.getItem('fl_k')||'';
   uName=localStorage.getItem('fl_nm')||'Utente';uMode=localStorage.getItem('fl_mode')||'agenzia';
   try{uRoles=JSON.parse(localStorage.getItem('fl_rl')||'["master"]')}catch(e){uRoles=['master']}
